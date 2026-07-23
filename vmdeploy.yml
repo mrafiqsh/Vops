@@ -1,0 +1,66 @@
+name: Deploy Azure Windows Server 2019 VM
+
+on:
+  workflow_dispatch:
+    inputs:
+      vm_name:
+        description: 'Name of the VM to create'
+        required: true
+        default: 'win2019vm'
+      vm_size:
+        description: 'Azure VM size'
+        required: false
+        default: 'Standard_B2ms'
+      admin_username:
+        description: 'Admin username for the Windows VM'
+        required: false
+        default: 'azureuser'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Windows Server 2019 VM to existing resource group Laxoza_RG
+        env:
+          RESOURCE_GROUP: Laxoza_RG
+          VM_NAME: ${{ github.event.inputs.vm_name }}
+          VM_SIZE: ${{ github.event.inputs.vm_size }}
+          ADMIN_USERNAME: ${{ github.event.inputs.admin_username }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          echo "Deploying VM '$VM_NAME' to resource group '$RESOURCE_GROUP' (image: Win2019Datacenter)"
+
+          # Create VM and open RDP (creates a public IP and NSG rule for RDP)
+          az vm create \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$VM_NAME" \
+            --image Win2019Datacenter \
+            --admin-username "$ADMIN_USERNAME" \
+            --admin-password "$ADMIN_PASSWORD" \
+            --size "$VM_SIZE" \
+            --authentication-type password \
+            --public-ip-sku Standard \
+            --nsg-rule RDP
+
+          echo "Waiting for VM to be provisioned..."
+          az vm wait --created --resource-group "$RESOURCE_GROUP" --name "$VM_NAME"
+
+          echo "VM deployed. Public IP / connection info:"
+          az vm list-ip-addresses --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" -o table
+
+      - name: Output notes
+        run: |
+          echo "Workflow finished. To remove resources: az group delete --name Laxoza_RG --yes --no-wait (only if that RG is disposable)"
