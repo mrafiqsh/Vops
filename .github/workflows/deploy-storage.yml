@@ -1,4 +1,4 @@
-name: Deploy Azure Storage Account
+name: Deploy Storage Account
 
 on:
   push:
@@ -7,18 +7,14 @@ on:
 
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
-  deploy:
+  deploy-storage:
 
     runs-on: ubuntu-latest
 
     steps:
 
-    - name: Checkout Code
+    - name: Checkout Repository
       uses: actions/checkout@v4
 
     - name: Azure Login
@@ -30,21 +26,20 @@ jobs:
       run: |
         az account show
 
-    - name: Create Resource Group
+    - name: Verify Resource Group Exists
       run: |
-        az group create \
-          --name rg-storage-dev \
-          --location germanywestcentral
+        az group show \
+          --name Laxoza_RG
 
     - name: Deploy Storage Account
       run: |
         az deployment group create \
-          --resource-group rg-storage-dev \
+          --resource-group Laxoza_RG \
           --template-file infra/main.bicep \
           --parameters @infra/parameters.json
 
-    - name: Show Storage Account
+    - name: Validate Deployment
       run: |
         az storage account list \
-          --resource-group rg-storage-dev \
+          --resource-group Laxoza_RG \
           --output table
