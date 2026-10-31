@@ -3,7 +3,6 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "storageAccountName": {
-      "value": "stgdev001abc"
-    }
+      "value": "stgdev001lax"
   }
 }
