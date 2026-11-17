@@ -9,6 +9,10 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    defaults:
+  run:
+    working-directory: terraform-azure-rg
+
 
     steps:
     - name: Checkout
@@ -27,7 +31,7 @@ jobs:
       uses: hashicorp/setup-terraform@v3
 
     - name: Terraform Init
-      run: terraform init
+     run: terraform init
 
     - name: Terraform Validate
       run: terraform validate
